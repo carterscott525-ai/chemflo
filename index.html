@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Pool Dashboard – Genesis ChemFlo</title>
+<meta name="theme-color" content="#152029">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f7fa; --card: #ffffff; --ink: #14212b; --muted: #5f6f7c; --line: #e2e8ee;
+    --brand: #0a7ea4; --brand2: #13b5c8; --ok: #1f9d55; --warn: #d97706; --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1419; --card: #152029; --ink: #e8eef2; --muted: #93a4b1; --line: #23323d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { background: var(--card); color: var(--ink); border-bottom: 1px solid var(--line); padding: 18px 16px; position: relative; }
+  header::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--brand), var(--brand2)); }
+  .head { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 44px; height: 44px; border-radius: 12px; flex: none; display: grid; place-items: center;
+          background: linear-gradient(135deg, var(--brand), var(--brand2)); }
+  .logo svg { width: 22px; height: 22px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header .wrap { padding: 0; }
+  .brand { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--brand2); font-weight: 600; }
+  h1 { margin: 2px 0 0; font-size: 22px; line-height: 1.2; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .chip { border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+  main.wrap { margin-top: 20px; padding-bottom: 32px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .card h2 small { font-weight: 400; color: var(--muted); font-size: 12px; }
+  .status { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .tile { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .tile .lbl { font-size: 12px; color: var(--muted); }
+  .tile .val { font-size: 26px; font-weight: 650; margin: 2px 0; }
+  .tile .rng { font-size: 12px; color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+  .b-ok { background: rgba(31,157,85,.14); color: var(--ok); }
+  .b-warn { background: rgba(217,119,6,.15); color: var(--warn); }
+  .b-bad { background: rgba(220,38,38,.14); color: var(--bad); }
+  .b-na { background: rgba(127,127,127,.15); color: var(--muted); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .chartbox { position: relative; height: 240px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; color: var(--ink); padding: 5px 12px; font-size: 13px; cursor: pointer; }
+  .seg button.on { background: var(--brand); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; }
+  .tablewrap { overflow-x: auto; }
+  .notif { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .notif:last-child { border-bottom: 0; }
+  .notif .t { font-weight: 600; }
+  .notif .m { color: var(--muted); font-size: 13px; }
+  .notif .w { font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .center { text-align: center; padding: 60px 16px; color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 16px 28px; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="head">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7c-3.3 4-6 7.4-6 10.8a6 6 0 0 0 12 0c0-3.4-2.7-6.8-6-10.8z"/></svg></div>
+    <div>
+      <div class="brand">Genesis ChemFlo</div>
+      <h1 id="title">Your Pool</h1>
+      <div class="sub" id="addr"></div>
+    </div>
+  </div>
+  <div class="meta" id="meta"></div>
+</div></header>
+
+<main class="wrap" id="app"><div class="card center">Loading your pool data…</div></main>
+<footer id="foot"></footer>
+
+<script>
+var API = 'https://script.google.com/macros/s/AKfycbwx_NdlvjhehupvHGqd15-kZZ9pb4dn8J_LVVYPpRQ_hlaomDSYQEbR8uFNqpi35ml8/exec';
+var TOKEN = new URLSearchParams(location.search).get('pool') || '';
+var DAYS = 30;
+var charts = {};
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
+function fmt(v, d) { return (v === null || v === undefined) ? '—' : Number(v).toFixed(d); }
+function when(ms) { if (!ms) return '—'; var d = new Date(ms); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+function ago(ms) { if (!ms) return ''; var m = Math.round((Date.now() - ms) / 60000); if (m < 60) return m + ' min ago'; var h = Math.round(m / 60); if (h < 48) return h + ' hr ago'; return Math.round(h / 24) + ' days ago'; }
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function rate(v, min, max) {
+  if (v === null || v === undefined) return 'na';
+  if ((min !== null && min !== undefined && v < min) || (max !== null && max !== undefined && v > max)) {
+    var span = (max || v) - (min || 0);
+    var off = v < min ? (min - v) : (v - max);
+    return off > Math.abs(span) * 0.15 ? 'bad' : 'warn';
+  }
+  return 'ok';
+}
+var RATE_TEXT = { ok: 'In range', warn: 'Slightly off', bad: 'Needs attention', na: 'No data' };
+
+function load(days) {
+  DAYS = days;
+  if (!TOKEN) { showError('This dashboard link is incomplete. Please use the full link from your pool service.'); return; }
+  var url = API + '?api=1&pool=' + encodeURIComponent(TOKEN) + '&days=' + days;
+  fetch(url, { credentials: 'omit', redirect: 'follow' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(render)
+    .catch(function () { showError('We couldn\u2019t load your pool data right now. Please refresh in a minute.'); });
+}
+
+function showError(msg) {
+  var app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(el('div', 'card center', msg));
+}
+
+function render(d) {
+  if (!d || d.error) { showError(d ? d.error : 'No data.'); return; }
+  var L = d.limits, p = d.pool, x = d.latest || {};
+  document.getElementById('title').textContent = p.customer;
+  document.getElementById('addr').textContent = p.address;
+  document.title = p.customer + ' – Pool Dashboard';
+  var meta = document.getElementById('meta'); meta.innerHTML = '';
+  if (p.serviceDay) meta.appendChild(el('span', 'chip', 'Service day: ' + p.serviceDay));
+  if (p.technician) meta.appendChild(el('span', 'chip', 'Technician: ' + p.technician));
+  if (p.dispenser) meta.appendChild(el('span', 'chip', 'Automatic chlorinator'));
+
+  var app = document.getElementById('app'); app.innerHTML = '';
+
+  // Overall status
+  var tiles = [
+    { lbl: 'pH', v: x.ph, d: 2, min: L.phMin, max: L.phMax, rng: L.phMin + '–' + L.phMax },
+    { lbl: 'Sanitizer (ORP, mV)', v: x.orp, d: 0, min: L.orpMin, max: L.orpMax, rng: L.orpMin + '–' + L.orpMax },
+    { lbl: 'Water temp', v: x.temp, d: 1, min: L.tempMin, max: L.tempMax, rng: (L.tempMin || L.tempMax) ? ((L.tempMin || '') + '–' + (L.tempMax || '')) : '' },
+    { lbl: 'TDS (ppm)', v: x.tds, d: 0, min: null, max: L.tdsMax, rng: L.tdsMax ? 'under ' + L.tdsMax : '' },
+    { lbl: 'Sensor battery', v: x.battery, d: 0, min: L.batteryMin, max: null, rng: 'above ' + L.batteryMin + '%', suf: '%' }
+  ];
+  var worst = 'ok', any = false;
+  tiles.slice(0, 2).forEach(function (t) { var r = rate(t.v, t.min, t.max); if (r !== 'na') any = true; if (r === 'bad' || (r === 'warn' && worst === 'ok')) worst = r; });
+  if (!any) worst = 'na';
+  var stale = x.time && (Date.now() - x.time > 6 * 3600000);
+
+  var sc = el('div', 'card');
+  var st = el('div', 'status');
+  var dot = el('div', 'dot'); dot.style.background = css(worst === 'ok' ? '--ok' : worst === 'warn' ? '--warn' : worst === 'bad' ? '--bad' : '--muted');
+  st.appendChild(dot);
+  var stx = el('div');
+  stx.appendChild(el('div', '', worst === 'ok' ? 'Your water chemistry looks good.' : worst === 'warn' ? 'Your water is slightly out of range — we’re keeping an eye on it.' : worst === 'bad' ? 'Your water needs attention — your technician has been alerted.' : 'Waiting for the first sensor reading.')).style.fontWeight = '600';
+  stx.appendChild(el('div', 'rng', x.time ? ('Last sensor reading ' + when(x.time) + ' (' + ago(x.time) + ')' + (stale ? ' · sensor may be offline' : '')) : '')).style.color = css('--muted');
+  st.appendChild(stx); sc.appendChild(st);
+  app.appendChild(sc);
+
+  // Live tiles
+  var lc = el('div', 'card');
+  var h = el('h2', '', 'Live sensor readings'); lc.appendChild(h);
+  var tg = el('div', 'tiles');
+  tiles.forEach(function (t) {
+    var r = rate(t.v, t.min, t.max);
+    var c = el('div', 'tile');
+    c.appendChild(el('div', 'lbl', t.lbl));
+    c.appendChild(el('div', 'val', t.v === null || t.v === undefined ? '—' : fmt(t.v, t.d) + (t.suf || '')));
+    c.appendChild(el('span', 'badge b-' + r, RATE_TEXT[r]));
+    if (t.rng) c.appendChild(el('div', 'rng', 'Target ' + t.rng));
+    tg.appendChild(c);
+  });
+  lc.appendChild(tg); app.appendChild(lc);
+
+  // Charts
+  var cc = el('div', 'card');
+  var ch = el('h2'); ch.appendChild(el('span', '', 'Trends'));
+  var seg = el('div', 'seg');
+  [7, 30, 90].forEach(function (n) {
+    var b = el('button', n === d.days ? 'on' : '', n + ' days');
+    b.onclick = function () { load(n); };
+    seg.appendChild(b);
+  });
+  ch.appendChild(seg); cc.appendChild(ch);
+  var g2 = el('div', 'grid2');
+  var specs = [
+    { id: 'ph', title: 'pH', key: 'ph', color: '#0a7ea4', min: L.phMin, max: L.phMax },
+    { id: 'orp', title: 'Sanitizer (ORP, mV)', key: 'orp', color: '#7c3aed', min: L.orpMin, max: L.orpMax },
+    { id: 'temp', title: 'Water temperature', key: 'temp', color: '#ea580c', min: L.tempMin, max: L.tempMax },
+    { id: 'fc', title: 'Chlorine (technician tests, ppm)', key: 'freeChlorine', color: '#16a34a', tests: true }
+  ];
+  specs.forEach(function (s) {
+    var box = el('div');
+    box.appendChild(el('div', 'rng', s.title)).style.cssText = 'font-size:13px;font-weight:600;margin-bottom:6px';
+    var cb = el('div', 'chartbox'); var cv = document.createElement('canvas'); cb.appendChild(cv); box.appendChild(cb);
+    g2.appendChild(box);
+    s.canvas = cv;
+  });
+  cc.appendChild(g2); app.appendChild(cc);
+  specs.forEach(function (s) { drawChart(s, s.tests ? d.tests.slice().reverse() : d.readings); });
+
+  // Technician visits
+  var tc = el('div', 'card');
+  tc.appendChild(el('h2', '', 'Technician test results'));
+  var rows = d.tests.slice();
+  if (d.lastTest && d.lastTest.time && !rows.some(function (r) { return Math.abs(r.time - d.lastTest.time) < 60000; })) rows.unshift(d.lastTest);
+  if (!rows.length) tc.appendChild(el('div', 'empty', 'No technician tests in this period yet.'));
+  else {
+    var tw = el('div', 'tablewrap'); var tb = el('table');
+    var hr = el('tr'); ['Date', 'Free Cl', 'Total Cl', 'pH', 'Alkalinity', 'Hardness', 'Stabilizer', 'Tech'].forEach(function (t) { hr.appendChild(el('th', '', t)); });
+    tb.appendChild(hr);
+    rows.forEach(function (r) {
+      var tr = el('tr');
+      [when(r.time), fmt(r.freeChlorine, 1), fmt(r.totalChlorine, 1), fmt(r.ph, 1), fmt(r.alkalinity, 0), fmt(r.hardness, 0), fmt(r.stabilizer, 0), r.servicedBy || ''].forEach(function (v) { tr.appendChild(el('td', '', v)); });
+      tb.appendChild(tr);
+    });
+    tw.appendChild(tb); tc.appendChild(tw);
+  }
+  app.appendChild(tc);
+
+  // Notifications
+  var nc = el('div', 'card');
+  var nh = el('h2'); nh.appendChild(el('span', '', 'Notifications')); nh.appendChild(el('small', '', 'Last 30 days'));
+  nc.appendChild(nh);
+  if (!d.notifications.length) nc.appendChild(el('div', 'empty', 'No notifications in the last 30 days. Alerts and service updates for your pool will appear here.'));
+  d.notifications.forEach(function (n) {
+    var it = el('div', 'notif');
+    it.appendChild(el('div', 't', n.title || n.type || 'Update'));
+    if (n.message) it.appendChild(el('div', 'm', n.message));
+    it.appendChild(el('div', 'w', when(n.time) + (n.type ? ' · ' + n.type : '')));
+    nc.appendChild(it);
+  });
+  app.appendChild(nc);
+
+  document.getElementById('foot').textContent = 'Updated ' + when(d.generated) + ' · Readings refresh automatically every 15 minutes while this page is open.';
+}
+
+function drawChart(s, rows) {
+  if (charts[s.id]) charts[s.id].destroy();
+  var pts = rows.filter(function (r) { return r[s.key] !== null && r[s.key] !== undefined && r.time; })
+                .map(function (r) { return { x: r.time, y: r[s.key] }; });
+  var ink = css('--muted'), line = css('--line');
+  var sets = [{ label: s.title, data: pts, borderColor: s.color, backgroundColor: s.color + '22', fill: true, tension: .3,
+                pointRadius: pts.length > 60 ? 0 : 3, borderWidth: 2 }];
+  if (s.min !== null && s.min !== undefined && pts.length) sets.push(band(pts, s.min, 'Min'));
+  if (s.max !== null && s.max !== undefined && pts.length) sets.push(band(pts, s.max, 'Max'));
+  if (!pts.length) {
+    var ctx = s.canvas.getContext('2d');
+    s.canvas.parentNode.innerHTML = '<div class="empty" style="padding-top:90px;text-align:center">No data in this period</div>';
+    return;
+  }
+  charts[s.id] = new Chart(s.canvas, {
+    type: 'line',
+    data: { datasets: sets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'nearest', intersect: false },
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { title: function (i) { return when(i[0].parsed.x); } } } },
+      scales: {
+        x: { type: 'linear', ticks: { color: ink, maxTicksLimit: 6, callback: function (v) { return new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } }, grid: { color: line } },
+        y: { ticks: { color: ink }, grid: { color: line } }
+      }
+    }
+  });
+}
+
+function band(pts, y, label) {
+  return { label: label, data: [{ x: pts[0].x, y: y }, { x: pts[pts.length - 1].x, y: y }],
+           borderColor: '#94a3b8', borderDash: [5, 5], borderWidth: 1, pointRadius: 0, fill: false };
+}
+
+load(30);
+setInterval(function () { load(DAYS); }, 15 * 60000);
+</script>
+</body>
+</html>
