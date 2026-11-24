@@ -142,7 +142,7 @@ function render(d) {
     { lbl: 'Sanitizer (ORP, mV)', v: x.orp, d: 0, min: L.orpMin, max: L.orpMax, rng: L.orpMin + '–' + L.orpMax },
     { lbl: 'Water temp', v: x.temp, d: 1, min: L.tempMin, max: L.tempMax, rng: (L.tempMin || L.tempMax) ? ((L.tempMin || '') + '–' + (L.tempMax || '')) : '' },
     { lbl: 'TDS (ppm)', v: x.tds, d: 0, min: null, max: L.tdsMax, rng: L.tdsMax ? 'under ' + L.tdsMax : '' },
-    { lbl: 'Sensor battery', v: x.battery, d: 0, min: L.batteryMin, max: null, rng: 'above ' + L.batteryMin + '%', suf: '%' }
+    { lbl: 'Sensor battery', v: x.battery, d: 0, min: L.batteryMin, max: null, rng: (x.battery === null || x.battery === undefined || x.battery === '' || L.batteryMin === null || L.batteryMin === undefined || L.batteryMin < 0 || L.batteryMin > 100) ? '' : 'above ' + L.batteryMin + '%', suf: '%' }
   ];
   var worst = 'ok', any = false;
   tiles.slice(0, 2).forEach(function (t) { var r = rate(t.v, t.min, t.max); if (r !== 'na') any = true; if (r === 'bad' || (r === 'warn' && worst === 'ok')) worst = r; });
